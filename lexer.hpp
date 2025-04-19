@@ -1,12 +1,15 @@
+#ifndef LEXER_HPP
+#define LEXER_HPP
+
 #include <bits/stdc++.h>
 using namespace std;
 
 enum TokenType {
-    TOKEN_BEGIN, TOKEN_END, TOKEN_INT, TOKEN_BOOL, 
-    TOKEN_IF, TOKEN_THEN, TOKEN_ELSE, TOKEN_DO, TOKEN_WHILE, TOKEN_FOR, TOKEN_PRINT,
-    TOKEN_PLUS, TOKEN_MULTIPLY, TOKEN_GREATER, TOKEN_GREATER_EQUAL, TOKEN_EQUAL, TOKEN_ASSIGN,
-    TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_LEFT_BRACE, TOKEN_RIGHT_BRACE, 
-    TOKEN_SEMICOLON, TOKEN_IDENTIFIER, TOKEN_NUMBER, TOKEN_EOF, TOKEN_ERROR
+    L_TOKEN_EOF, L_TOKEN_BEGIN, L_TOKEN_END, L_TOKEN_INT, L_TOKEN_BOOL, 
+    L_TOKEN_IF, L_TOKEN_THEN, L_TOKEN_ELSE, L_TOKEN_DO, L_TOKEN_WHILE, L_TOKEN_FOR, L_TOKEN_PRINT,
+    L_TOKEN_PLUS, L_TOKEN_MULTIPLY, L_TOKEN_GREATER, L_TOKEN_GREATER_EQUAL, L_TOKEN_EQUAL, L_TOKEN_ASSIGN,
+    L_TOKEN_LEFT_PAREN, L_TOKEN_RIGHT_PAREN, L_TOKEN_LEFT_BRACE, L_TOKEN_RIGHT_BRACE, 
+    L_TOKEN_SEMICOLON, L_TOKEN_IDENTIFIER, L_TOKEN_NUMBER, L_TOKEN_ERROR, L_TOKEN_TRUE, L_TOKEN_FALSE
 };
 string tokenTypeName(TokenType type);
 
@@ -14,12 +17,16 @@ struct Token {
     TokenType type;
     string message, lexeme;
     int line;
+
+    Token() = default;
     
     Token(TokenType type, const string& lexeme, int line, const string& message = "")
-        : type(type), line(line), message(message), lexeme(lexeme) {}
+        : type(type), message(message), lexeme(lexeme), line(line) {}
 
     friend ostream& operator<<(ostream& os, const Token& token) {
-        if (token.message.empty()) {
+        if (token.type == L_TOKEN_ERROR) {
+            os << "ERROR: " << token.message << " at line " << token.line;
+        } else if (token.message.empty()) {
             os << tokenTypeName(token.type);
         } else {
             os << tokenTypeName(token.type) << ' ' << token.message;
@@ -165,17 +172,19 @@ private:
 public:
     Lexer(const string& filename) {
         reader = make_unique<FileReader>(filename);
-        keywords["begin"] = TOKEN_BEGIN;
-        keywords["end"] = TOKEN_END;
-        keywords["int"] = TOKEN_INT;
-        keywords["bool"] = TOKEN_BOOL;
-        keywords["if"] = TOKEN_IF;
-        keywords["then"] = TOKEN_THEN;
-        keywords["else"] = TOKEN_ELSE;
-        keywords["do"] = TOKEN_DO;
-        keywords["while"] = TOKEN_WHILE;
-        keywords["for"] = TOKEN_FOR;
-        keywords["print"] = TOKEN_PRINT;
+        keywords["begin"] = L_TOKEN_BEGIN;
+        keywords["end"] = L_TOKEN_END;
+        keywords["int"] = L_TOKEN_INT;
+        keywords["bool"] = L_TOKEN_BOOL;
+        keywords["if"] = L_TOKEN_IF;
+        keywords["then"] = L_TOKEN_THEN;
+        keywords["else"] = L_TOKEN_ELSE;
+        keywords["do"] = L_TOKEN_DO;
+        keywords["while"] = L_TOKEN_WHILE;
+        keywords["for"] = L_TOKEN_FOR;
+        keywords["print"] = L_TOKEN_PRINT;
+        keywords["true"] = L_TOKEN_TRUE;
+        keywords["false"] = L_TOKEN_FALSE;
     }
 
     vector<Token> scanTokens();
@@ -187,3 +196,5 @@ private:
     Token scanIdentifier();
     Token scanNumber();
 };
+
+#endif // LEXER_HPP

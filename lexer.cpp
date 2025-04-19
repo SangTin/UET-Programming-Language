@@ -2,32 +2,34 @@
 
 string tokenTypeName(TokenType type) {
     switch (type) {
-        case TOKEN_BEGIN: return "BEGIN";
-        case TOKEN_END: return "END";
-        case TOKEN_INT: return "INT";
-        case TOKEN_BOOL: return "BOOL";
-        case TOKEN_IF: return "IF";
-        case TOKEN_THEN: return "THEN";
-        case TOKEN_ELSE: return "ELSE";
-        case TOKEN_DO: return "DO";
-        case TOKEN_WHILE: return "WHILE";
-        case TOKEN_FOR: return "FOR";
-        case TOKEN_PRINT: return "PRINT";
-        case TOKEN_PLUS: return "PLUS";
-        case TOKEN_MULTIPLY: return "MULTIPLY";
-        case TOKEN_GREATER: return "GREATER";
-        case TOKEN_GREATER_EQUAL: return "GREATER_EQUAL";
-        case TOKEN_EQUAL: return "EQUAL";
-        case TOKEN_ASSIGN: return "ASSIGN";
-        case TOKEN_LEFT_PAREN: return "LEFT_PAREN";
-        case TOKEN_RIGHT_PAREN: return "RIGHT_PAREN";
-        case TOKEN_LEFT_BRACE: return "LEFT_BRACE";
-        case TOKEN_RIGHT_BRACE: return "RIGHT_BRACE";
-        case TOKEN_SEMICOLON: return "SEMICOLON";
-        case TOKEN_IDENTIFIER: return "IDENTIFIER";
-        case TOKEN_NUMBER: return "NUMBER";
-        case TOKEN_EOF: return "EOF";
-        case TOKEN_ERROR: return "ERROR";
+        case L_TOKEN_BEGIN: return "BEGIN";
+        case L_TOKEN_END: return "END";
+        case L_TOKEN_INT: return "INT";
+        case L_TOKEN_BOOL: return "BOOL";
+        case L_TOKEN_IF: return "IF";
+        case L_TOKEN_THEN: return "THEN";
+        case L_TOKEN_ELSE: return "ELSE";
+        case L_TOKEN_DO: return "DO";
+        case L_TOKEN_WHILE: return "WHILE";
+        case L_TOKEN_FOR: return "FOR";
+        case L_TOKEN_PRINT: return "PRINT";
+        case L_TOKEN_PLUS: return "PLUS";
+        case L_TOKEN_MULTIPLY: return "MULTIPLY";
+        case L_TOKEN_GREATER: return "GREATER";
+        case L_TOKEN_GREATER_EQUAL: return "GREATER_EQUAL";
+        case L_TOKEN_EQUAL: return "EQUAL";
+        case L_TOKEN_ASSIGN: return "ASSIGN";
+        case L_TOKEN_LEFT_PAREN: return "LEFT_PAREN";
+        case L_TOKEN_RIGHT_PAREN: return "RIGHT_PAREN";
+        case L_TOKEN_LEFT_BRACE: return "LEFT_BRACE";
+        case L_TOKEN_RIGHT_BRACE: return "RIGHT_BRACE";
+        case L_TOKEN_SEMICOLON: return "SEMICOLON";
+        case L_TOKEN_IDENTIFIER: return "IDENTIFIER";
+        case L_TOKEN_NUMBER: return "NUMBER";
+        case L_TOKEN_EOF: return "$";
+        case L_TOKEN_ERROR: return "ERROR";
+        case L_TOKEN_TRUE: return "TRUE";
+        case L_TOKEN_FALSE: return "FALSE";
         default: return "UNKNOWN";
     }
 }
@@ -40,11 +42,11 @@ vector<Token> Lexer::scanTokens() {
         reader->setLexemeBegin();
         
         Token token = nextToken();
-        if (token.type != TOKEN_EOF) {
+        if (token.type != L_TOKEN_EOF) {
             tokens.push_back(token);
         }
         
-        if (token.type == TOKEN_EOF) {
+        if (token.type == L_TOKEN_EOF) {
             break;
         }
     }
@@ -59,32 +61,32 @@ Token Lexer::nextToken() {
     reader->setLexemeBegin();
 
     if (reader->isAtEnd()) {
-        return Token(TOKEN_EOF, "", reader->getLine());
+        return Token(L_TOKEN_EOF, "", reader->getLine());
     }
 
     char c = reader->advance();
 
     switch (c) {
-        case '(': return Token(TOKEN_LEFT_PAREN, "(", reader->getLine());
-        case ')': return Token(TOKEN_RIGHT_PAREN, ")", reader->getLine());
-        case '{': return Token(TOKEN_LEFT_BRACE, "{", reader->getLine());
-        case '}': return Token(TOKEN_RIGHT_BRACE, "}", reader->getLine());
-        case ';': return Token(TOKEN_SEMICOLON, ";", reader->getLine());
-        case '+': return Token(TOKEN_PLUS, "+", reader->getLine());
-        case '*': return Token(TOKEN_MULTIPLY, "*", reader->getLine());
+        case '(': return Token(L_TOKEN_LEFT_PAREN, "(", reader->getLine());
+        case ')': return Token(L_TOKEN_RIGHT_PAREN, ")", reader->getLine());
+        case '{': return Token(L_TOKEN_LEFT_BRACE, "{", reader->getLine());
+        case '}': return Token(L_TOKEN_RIGHT_BRACE, "}", reader->getLine());
+        case ';': return Token(L_TOKEN_SEMICOLON, ";", reader->getLine());
+        case '+': return Token(L_TOKEN_PLUS, "+", reader->getLine());
+        case '*': return Token(L_TOKEN_MULTIPLY, "*", reader->getLine());
 
         case '>': {
             if (match('=')) {
-                return Token(TOKEN_GREATER_EQUAL, ">=", reader->getLine());
+                return Token(L_TOKEN_GREATER_EQUAL, ">=", reader->getLine());
             }
-            return Token(TOKEN_GREATER, ">", reader->getLine());
+            return Token(L_TOKEN_GREATER, ">", reader->getLine());
         }
 
         case '=': {
             if (match('=')) {
-                return Token(TOKEN_EQUAL, "==", reader->getLine());
+                return Token(L_TOKEN_EQUAL, "==", reader->getLine());
             }
-            return Token(TOKEN_ASSIGN, "=", reader->getLine());
+            return Token(L_TOKEN_ASSIGN, "=", reader->getLine());
         }
 
         case '/': {
@@ -101,7 +103,7 @@ Token Lexer::nextToken() {
                 }
                 
                 if (reader->isAtEnd()) {
-                    return Token(TOKEN_ERROR, "", reader->getLine(), "Unterminated comment");
+                    return Token(L_TOKEN_ERROR, "", reader->getLine(), "Unterminated comment");
                 }
                 
                 // Bỏ qua */ kết thúc
@@ -110,7 +112,7 @@ Token Lexer::nextToken() {
                 
                 return nextToken();
             }
-            return Token(TOKEN_ERROR, "", reader->getLine(), "Unexpected character");
+            return Token(L_TOKEN_ERROR, "", reader->getLine(), "Unexpected character");
         }
         
         default: {
@@ -119,7 +121,7 @@ Token Lexer::nextToken() {
             } else if (isalpha(c)) {
                 return scanIdentifier();
             } else {
-                return Token(TOKEN_ERROR, string(1, c), reader->getLine(), "Unexpected character \'" + string(1, c) + "\'");
+                return Token(L_TOKEN_ERROR, string(1, c), reader->getLine(), "Unexpected character \'" + string(1, c) + "\'");
             }
         }
     }
@@ -159,7 +161,7 @@ Token Lexer::scanIdentifier() {
     const string &lexeme = reader->getLexeme();
     
     // Kiểm tra từ khóa
-    TokenType type = TOKEN_IDENTIFIER;
+    TokenType type = L_TOKEN_IDENTIFIER;
     if (keywords.find(lexeme) != keywords.end()) {
         type = keywords[lexeme];
         return Token(type, lexeme, reader->getLine());
@@ -185,7 +187,7 @@ Token Lexer::scanIdentifier() {
         }
         
         if (!valid) {
-            return Token(TOKEN_ERROR, lexeme, reader->getLine(), "Invalid identifier \'" + lexeme + "\'");
+            return Token(L_TOKEN_ERROR, lexeme, reader->getLine(), "Invalid identifier \'" + lexeme + "\'");
         }
         
         return Token(type, lexeme, reader->getLine(), lexeme);
@@ -203,11 +205,11 @@ Token Lexer::scanNumber() {
             reader->advance();
         }
         
-        return Token(TOKEN_ERROR, reader->getLexeme(), reader->getLine(), "Invalid number \'" + reader->getLexeme() + "\'");
+        return Token(L_TOKEN_ERROR, reader->getLexeme(), reader->getLine(), "Invalid number \'" + reader->getLexeme() + "\'");
     }
     
     // Lấy lexeme từ lexemeBegin đến forward
     string lexeme = reader->getLexeme();
     
-    return Token(TOKEN_NUMBER, lexeme, reader->getLine(), lexeme);
+    return Token(L_TOKEN_NUMBER, lexeme, reader->getLine(), lexeme);
 }

@@ -1,0 +1,81 @@
+# Chương trình
+program -> BEGIN stmts END
+
+# Các phát biểu
+stmts -> stmt stmts_tail
+stmts_tail -> stmt stmts_tail
+stmts_tail -> ε
+
+# Phân loại phát biểu
+stmt -> expression SEMICOLON
+stmt -> assignment SEMICOLON
+stmt -> declaration SEMICOLON
+stmt -> if_stmt
+stmt -> do_while_stmt SEMICOLON
+stmt -> for_stmt
+stmt -> print_stmt SEMICOLON
+stmt -> block_stmt
+
+# Biểu thức
+expression -> addition expression_tail
+expression_tail -> relop addition expression_tail
+expression_tail -> ε
+
+addition -> multiplication addition_tail
+addition_tail -> PLUS multiplication addition_tail
+addition_tail -> ε
+
+multiplication -> factor multiplication_tail
+multiplication_tail -> MULTIPLY factor multiplication_tail
+multiplication_tail -> ε
+
+factor -> IDENTIFIER
+factor -> NUMBER
+factor -> TRUE
+factor -> FALSE
+factor -> LEFT_PAREN expression RIGHT_PAREN
+
+# Khai báo biến - sửa đổi
+declaration -> dtype declaration_tail
+declaration_tail -> IDENTIFIER id_tail
+id_tail -> ASSIGN expression
+id_tail -> ε
+
+# Phát biểu gán
+assignment -> IDENTIFIER ASSIGN expression
+
+# Phát biểu if-then-else - sửa đổi
+if_stmt -> IF LEFT_PAREN expression RIGHT_PAREN THEN stmt else_part
+else_part -> ELSE stmt
+else_part -> ε
+
+# Phát biểu do-while
+do_while_stmt -> DO stmt WHILE LEFT_PAREN expression RIGHT_PAREN
+
+# Phát biểu for
+for_stmt -> FOR LEFT_PAREN for_init SEMICOLON for_condition SEMICOLON for_update RIGHT_PAREN stmt
+
+for_init -> declaration
+for_init -> assignment
+for_init -> ε
+
+for_condition -> expression
+for_condition -> ε
+
+for_update -> assignment
+for_update -> ε
+
+# Phát biểu print
+print_stmt -> PRINT LEFT_PAREN expression RIGHT_PAREN
+
+# Khối lệnh
+block_stmt -> LEFT_BRACE stmts RIGHT_BRACE
+
+# Kiểu dữ liệu
+dtype -> INT
+dtype -> BOOL
+
+# Toán tử so sánh
+relop -> GREATER
+relop -> GREATER_EQUAL
+relop -> EQUAL

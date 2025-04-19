@@ -1,25 +1,20 @@
+#include "lex_support.h"
 #include "lexer.hpp"
+#include "parser.hpp"
 #include <iostream>
+#include <fstream>
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <input_file>" << std::endl;
+    if (argc < 3) {
+        std::cerr << "Usage: " << argv[0] << " <grammar_file> <input_file>" << std::endl;
         return 1;
     }
-
-    try {
-        ofstream out("output.txt");
-
-        Lexer lexer(argv[1]);
-        vector<Token> tokens = lexer.scanTokens();
-
-        for (const Token& token : tokens) {
-            out << token << std::endl;
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
-    }
-
+    
+    std::string grammarFile = argv[1];
+    std::string inputFile = argv[2];
+    
+    LL1Parser parser(grammarFile, inputFile);
+    parser.parseInput();
+    
     return 0;
 }

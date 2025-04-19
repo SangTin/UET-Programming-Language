@@ -1,0 +1,168 @@
+g++ -std=c++17 -Wall -c lexer.cpp
+In file included from lexer.cpp:1:
+lexer.hpp: In constructor ‘Token::Token(TokenType, const std::string&, int, const std::string&)’:
+lexer.hpp:16:9: warning: ‘Token::line’ will be initialized after [-Wreorder]
+   16 |     int line;
+      |         ^~~~
+lexer.hpp:15:12: warning:   ‘std::string Token::message’ [-Wreorder]
+   15 |     string message, lexeme;
+      |            ^~~~~~~
+lexer.hpp:18:5: warning:   when initialized here [-Wreorder]
+   18 |     Token(TokenType type, const string& lexeme, int line, const string& message = "")
+      |     ^~~~~
+In file included from lexer.cpp:2:
+parser.tab.h: At global scope:
+parser.tab.h:57:19: error: ‘TOKEN_BEGIN’ conflicts with a previous declaration
+   57 |     TOKEN_BEGIN = 258,             /* TOKEN_BEGIN  */
+      |                   ^~~
+lexer.hpp:5:16: note: previous declaration ‘TokenType TOKEN_BEGIN’
+    5 |     TOKEN_EOF, TOKEN_BEGIN, TOKEN_END, TOKEN_INT, TOKEN_BOOL,
+      |                ^~~~~~~~~~~
+parser.tab.h:58:17: error: ‘TOKEN_END’ conflicts with a previous declaration
+   58 |     TOKEN_END = 259,               /* TOKEN_END  */
+      |                 ^~~
+lexer.hpp:5:29: note: previous declaration ‘TokenType TOKEN_END’
+    5 |     TOKEN_EOF, TOKEN_BEGIN, TOKEN_END, TOKEN_INT, TOKEN_BOOL,
+      |                             ^~~~~~~~~
+parser.tab.h:59:17: error: ‘TOKEN_INT’ conflicts with a previous declaration
+   59 |     TOKEN_INT = 260,               /* TOKEN_INT  */
+      |                 ^~~
+lexer.hpp:5:40: note: previous declaration ‘TokenType TOKEN_INT’
+    5 |     TOKEN_EOF, TOKEN_BEGIN, TOKEN_END, TOKEN_INT, TOKEN_BOOL,
+      |                                        ^~~~~~~~~
+parser.tab.h:60:18: error: ‘TOKEN_BOOL’ conflicts with a previous declaration
+   60 |     TOKEN_BOOL = 261,              /* TOKEN_BOOL  */
+      |                  ^~~
+lexer.hpp:5:51: note: previous declaration ‘TokenType TOKEN_BOOL’
+    5 |     TOKEN_EOF, TOKEN_BEGIN, TOKEN_END, TOKEN_INT, TOKEN_BOOL,
+      |                                                   ^~~~~~~~~~
+parser.tab.h:61:16: error: ‘TOKEN_IF’ conflicts with a previous declaration
+   61 |     TOKEN_IF = 262,                /* TOKEN_IF  */
+      |                ^~~
+lexer.hpp:6:5: note: previous declaration ‘TokenType TOKEN_IF’
+    6 |     TOKEN_IF, TOKEN_THEN, TOKEN_ELSE, TOKEN_DO, TOKEN_WHILE, TOKEN_FOR, TOKEN_PRINT,
+      |     ^~~~~~~~
+parser.tab.h:62:18: error: ‘TOKEN_THEN’ conflicts with a previous declaration
+   62 |     TOKEN_THEN = 263,              /* TOKEN_THEN  */
+      |                  ^~~
+lexer.hpp:6:15: note: previous declaration ‘TokenType TOKEN_THEN’
+    6 |     TOKEN_IF, TOKEN_THEN, TOKEN_ELSE, TOKEN_DO, TOKEN_WHILE, TOKEN_FOR, TOKEN_PRINT,
+      |               ^~~~~~~~~~
+parser.tab.h:63:18: error: ‘TOKEN_ELSE’ conflicts with a previous declaration
+   63 |     TOKEN_ELSE = 264,              /* TOKEN_ELSE  */
+      |                  ^~~
+lexer.hpp:6:27: note: previous declaration ‘TokenType TOKEN_ELSE’
+    6 |     TOKEN_IF, TOKEN_THEN, TOKEN_ELSE, TOKEN_DO, TOKEN_WHILE, TOKEN_FOR, TOKEN_PRINT,
+      |                           ^~~~~~~~~~
+parser.tab.h:64:16: error: ‘TOKEN_DO’ conflicts with a previous declaration
+   64 |     TOKEN_DO = 265,                /* TOKEN_DO  */
+      |                ^~~
+lexer.hpp:6:39: note: previous declaration ‘TokenType TOKEN_DO’
+    6 |     TOKEN_IF, TOKEN_THEN, TOKEN_ELSE, TOKEN_DO, TOKEN_WHILE, TOKEN_FOR, TOKEN_PRINT,
+      |                                       ^~~~~~~~
+parser.tab.h:65:19: error: ‘TOKEN_WHILE’ conflicts with a previous declaration
+   65 |     TOKEN_WHILE = 266,             /* TOKEN_WHILE  */
+      |                   ^~~
+lexer.hpp:6:49: note: previous declaration ‘TokenType TOKEN_WHILE’
+    6 |     TOKEN_IF, TOKEN_THEN, TOKEN_ELSE, TOKEN_DO, TOKEN_WHILE, TOKEN_FOR, TOKEN_PRINT,
+      |                                                 ^~~~~~~~~~~
+parser.tab.h:66:17: error: ‘TOKEN_FOR’ conflicts with a previous declaration
+   66 |     TOKEN_FOR = 267,               /* TOKEN_FOR  */
+      |                 ^~~
+lexer.hpp:6:62: note: previous declaration ‘TokenType TOKEN_FOR’
+    6 |     TOKEN_IF, TOKEN_THEN, TOKEN_ELSE, TOKEN_DO, TOKEN_WHILE, TOKEN_FOR, TOKEN_PRINT,
+      |                                                              ^~~~~~~~~
+parser.tab.h:67:19: error: ‘TOKEN_PRINT’ conflicts with a previous declaration
+   67 |     TOKEN_PRINT = 268,             /* TOKEN_PRINT  */
+      |                   ^~~
+lexer.hpp:6:73: note: previous declaration ‘TokenType TOKEN_PRINT’
+    6 |     TOKEN_IF, TOKEN_THEN, TOKEN_ELSE, TOKEN_DO, TOKEN_WHILE, TOKEN_FOR, TOKEN_PRINT,
+      |                                                                         ^~~~~~~~~~~
+parser.tab.h:68:18: error: ‘TOKEN_PLUS’ conflicts with a previous declaration
+   68 |     TOKEN_PLUS = 269,              /* TOKEN_PLUS  */
+      |                  ^~~
+lexer.hpp:7:5: note: previous declaration ‘TokenType TOKEN_PLUS’
+    7 |     TOKEN_PLUS, TOKEN_MULTIPLY, TOKEN_GREATER, TOKEN_GREATER_EQUAL, TOKEN_EQUAL, TOKEN_ASSIGN,
+      |     ^~~~~~~~~~
+parser.tab.h:69:22: error: ‘TOKEN_MULTIPLY’ conflicts with a previous declaration
+   69 |     TOKEN_MULTIPLY = 270,          /* TOKEN_MULTIPLY  */
+      |                      ^~~
+lexer.hpp:7:17: note: previous declaration ‘TokenType TOKEN_MULTIPLY’
+    7 |     TOKEN_PLUS, TOKEN_MULTIPLY, TOKEN_GREATER, TOKEN_GREATER_EQUAL, TOKEN_EQUAL, TOKEN_ASSIGN,
+      |                 ^~~~~~~~~~~~~~
+parser.tab.h:70:21: error: ‘TOKEN_GREATER’ conflicts with a previous declaration
+   70 |     TOKEN_GREATER = 271,           /* TOKEN_GREATER  */
+      |                     ^~~
+lexer.hpp:7:33: note: previous declaration ‘TokenType TOKEN_GREATER’
+    7 |     TOKEN_PLUS, TOKEN_MULTIPLY, TOKEN_GREATER, TOKEN_GREATER_EQUAL, TOKEN_EQUAL, TOKEN_ASSIGN,
+      |                                 ^~~~~~~~~~~~~
+parser.tab.h:71:27: error: ‘TOKEN_GREATER_EQUAL’ conflicts with a previous declaration
+   71 |     TOKEN_GREATER_EQUAL = 272,     /* TOKEN_GREATER_EQUAL  */
+      |                           ^~~
+lexer.hpp:7:48: note: previous declaration ‘TokenType TOKEN_GREATER_EQUAL’
+    7 |     TOKEN_PLUS, TOKEN_MULTIPLY, TOKEN_GREATER, TOKEN_GREATER_EQUAL, TOKEN_EQUAL, TOKEN_ASSIGN,
+      |                                                ^~~~~~~~~~~~~~~~~~~
+parser.tab.h:72:19: error: ‘TOKEN_EQUAL’ conflicts with a previous declaration
+   72 |     TOKEN_EQUAL = 273,             /* TOKEN_EQUAL  */
+      |                   ^~~
+lexer.hpp:7:69: note: previous declaration ‘TokenType TOKEN_EQUAL’
+    7 |     TOKEN_PLUS, TOKEN_MULTIPLY, TOKEN_GREATER, TOKEN_GREATER_EQUAL, TOKEN_EQUAL, TOKEN_ASSIGN,
+      |                                                                     ^~~~~~~~~~~
+parser.tab.h:73:20: error: ‘TOKEN_ASSIGN’ conflicts with a previous declaration
+   73 |     TOKEN_ASSIGN = 274,            /* TOKEN_ASSIGN  */
+      |                    ^~~
+lexer.hpp:7:82: note: previous declaration ‘TokenType TOKEN_ASSIGN’
+    7 |     TOKEN_PLUS, TOKEN_MULTIPLY, TOKEN_GREATER, TOKEN_GREATER_EQUAL, TOKEN_EQUAL, TOKEN_ASSIGN,
+      |                                                                                  ^~~~~~~~~~~~
+parser.tab.h:74:24: error: ‘TOKEN_LEFT_PAREN’ conflicts with a previous declaration
+   74 |     TOKEN_LEFT_PAREN = 275,        /* TOKEN_LEFT_PAREN  */
+      |                        ^~~
+lexer.hpp:8:5: note: previous declaration ‘TokenType TOKEN_LEFT_PAREN’
+    8 |     TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_LEFT_BRACE, TOKEN_RIGHT_BRACE,
+      |     ^~~~~~~~~~~~~~~~
+parser.tab.h:75:25: error: ‘TOKEN_RIGHT_PAREN’ conflicts with a previous declaration
+   75 |     TOKEN_RIGHT_PAREN = 276,       /* TOKEN_RIGHT_PAREN  */
+      |                         ^~~
+lexer.hpp:8:23: note: previous declaration ‘TokenType TOKEN_RIGHT_PAREN’
+    8 |     TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_LEFT_BRACE, TOKEN_RIGHT_BRACE,
+      |                       ^~~~~~~~~~~~~~~~~
+parser.tab.h:76:24: error: ‘TOKEN_LEFT_BRACE’ conflicts with a previous declaration
+   76 |     TOKEN_LEFT_BRACE = 277,        /* TOKEN_LEFT_BRACE  */
+      |                        ^~~
+lexer.hpp:8:42: note: previous declaration ‘TokenType TOKEN_LEFT_BRACE’
+    8 |     TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_LEFT_BRACE, TOKEN_RIGHT_BRACE,
+      |                                          ^~~~~~~~~~~~~~~~
+parser.tab.h:77:25: error: ‘TOKEN_RIGHT_BRACE’ conflicts with a previous declaration
+   77 |     TOKEN_RIGHT_BRACE = 278,       /* TOKEN_RIGHT_BRACE  */
+      |                         ^~~
+lexer.hpp:8:60: note: previous declaration ‘TokenType TOKEN_RIGHT_BRACE’
+    8 |     TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_LEFT_BRACE, TOKEN_RIGHT_BRACE,
+      |                                                            ^~~~~~~~~~~~~~~~~
+parser.tab.h:78:23: error: ‘TOKEN_SEMICOLON’ conflicts with a previous declaration
+   78 |     TOKEN_SEMICOLON = 279,         /* TOKEN_SEMICOLON  */
+      |                       ^~~
+lexer.hpp:9:5: note: previous declaration ‘TokenType TOKEN_SEMICOLON’
+    9 |     TOKEN_SEMICOLON, TOKEN_IDENTIFIER, TOKEN_NUMBER, TOKEN_ERROR, TOKEN_TRUE, TOKEN_FALSE
+      |     ^~~~~~~~~~~~~~~
+parser.tab.h:79:24: error: ‘TOKEN_IDENTIFIER’ conflicts with a previous declaration
+   79 |     TOKEN_IDENTIFIER = 280,        /* TOKEN_IDENTIFIER  */
+      |                        ^~~
+lexer.hpp:9:22: note: previous declaration ‘TokenType TOKEN_IDENTIFIER’
+    9 |     TOKEN_SEMICOLON, TOKEN_IDENTIFIER, TOKEN_NUMBER, TOKEN_ERROR, TOKEN_TRUE, TOKEN_FALSE
+      |                      ^~~~~~~~~~~~~~~~
+parser.tab.h:80:20: error: ‘TOKEN_NUMBER’ conflicts with a previous declaration
+   80 |     TOKEN_NUMBER = 281,            /* TOKEN_NUMBER  */
+      |                    ^~~
+lexer.hpp:9:40: note: previous declaration ‘TokenType TOKEN_NUMBER’
+    9 |     TOKEN_SEMICOLON, TOKEN_IDENTIFIER, TOKEN_NUMBER, TOKEN_ERROR, TOKEN_TRUE, TOKEN_FALSE
+      |                                        ^~~~~~~~~~~~
+lexer.cpp: In function ‘int yylex()’:
+lexer.cpp:8:19: error: ‘lexer’ was not declared in this scope; did you mean ‘Lexer’?
+    8 |     Token token = lexer.nextToken();
+      |                   ^~~~~
+      |                   Lexer
+lexer.cpp:13:13: error: ‘yyerror’ was not declared in this scope; did you mean ‘YYerror’?
+   13 |             yyerror(token.message.c_str());
+      |             ^~~~~~~
+      |             YYerror
+make: *** [Makefile:13: lexer.o] Error 1
