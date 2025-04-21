@@ -1,0 +1,45 @@
+begin
+  // Lexical errors
+  
+  // Invalid identifier (starts with a digit)
+   int 1abc = 10;
+  
+  // Invalid identifier (contains special characters)
+  int x@y = 20;
+  
+  // Valid identifier followed by more alphanumeric characters
+  int abc123;
+  
+  // Unterminated comment
+  /* This comment is not properly terminated */
+  
+  // Syntax errors
+  
+  // Missing semicolon
+  // int x = 5
+  
+  // Missing parenthesis
+  // if (x > 5 then { print(x); }
+  
+  // Using undeclared variable
+  // print(undeclaredVar);
+  
+  // Type mismatch (bool where int is expected)
+  // int x = true;
+  
+  // Multiple declarations
+  int z = 10;
+  // int z = 20;  // Redeclaration error
+  
+  // Missing right brace
+  // if (true) then {
+  //   print(1);
+  // Missing closing brace
+  
+  // These lines are commented out because they would cause errors
+  // The parser should handle the valid parts and report errors for invalid parts
+  
+  // Valid code to ensure the program has some valid content
+  int validVar = 100;
+  print(validVar);
+end

@@ -11,6 +11,9 @@
 !*.sh
 !Makefile
 !.gitignore
+!*.y
+!*.c
+!*.h
 
 # Compiled Object files
 *.slo
