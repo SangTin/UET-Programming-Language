@@ -12,6 +12,8 @@ void printUsage(const char* programName) {
     std::cout << "  --g <grammar_file>    Specify the grammar file (required)" << std::endl;
     std::cout << "  --i <input_file>      Specify the input file (required)" << std::endl;
     std::cout << "  --verbose             Enable verbose output" << std::endl;
+    std::cout << "  --tree <format>       Specify parse tree output format (cmd/dot)" << std::endl;
+    std::cout << "  --output <file>       Specify output file for parse tree (default: parse_tree.dot)" << std::endl;
     std::cout << "  --help                Display this help message" << std::endl;
 }
 
@@ -19,12 +21,16 @@ int main(int argc, char* argv[]) {
     // Default values
     std::string grammarFile = "";
     std::string inputFile = "";
+    std::string treeFormat = ""; // empty means no tree output
+    std::string outputFile = "parse_tree.dot";
     bool verbose = false;
     
     // Parse command line arguments
     std::unordered_map<std::string, std::string*> optionMap = {
         {"--g", &grammarFile},
-        {"--i", &inputFile}
+        {"--i", &inputFile},
+        {"--tree", &treeFormat},
+        {"--output", &outputFile}
     };
     
     for (int i = 1; i < argc; i++) {
@@ -59,11 +65,24 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
+    // Validate tree format if specified
+    if (!treeFormat.empty() && treeFormat != "cmd" && treeFormat != "dot") {
+        std::cerr << "Error: Tree format must be either 'cmd' or 'dot'." << std::endl;
+        printUsage(argv[0]);
+        return 1;
+    }
+    
     // If verbose mode is enabled, print the configuration
     if (verbose) {
         std::cout << "Configuration:" << std::endl;
         std::cout << "  Grammar file: " << grammarFile << std::endl;
         std::cout << "  Input file: " << inputFile << std::endl;
+        if (!treeFormat.empty()) {
+            std::cout << "  Tree output format: " << treeFormat << std::endl;
+            if (treeFormat == "dot") {
+                std::cout << "  Output file: " << outputFile << std::endl;
+            }
+        }
     }
     
     try {
@@ -80,8 +99,13 @@ int main(int argc, char* argv[]) {
         if (success) {
             std::cout << "Parsing successful!" << std::endl;
             
-            if (verbose) {
-                // Print additional information in verbose mode
+            if (treeFormat == "cmd") {
+                std::cout << "\nParse Tree (Enhanced View):" << std::endl;
+                parser.printEnhancedParseTree();
+            } else if (treeFormat == "dot") {
+                parser.exportParseTreeToDot(outputFile);
+            } else if (verbose) {
+                // In verbose mode, print basic parse tree if no specific format requested
                 parser.printParseTree();
             }
         } else {

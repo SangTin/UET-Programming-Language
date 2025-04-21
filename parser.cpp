@@ -12,6 +12,73 @@ vector<string> splitSymbols(const string& str) {
     return result;
 }
 
+//========================================= ParseTreeNode =========================================
+void ParseTreeNode::printTreeEnhanced(int depth, bool isLast) const {
+    string indent = "";
+    for (int i = 0; i < depth; i++) {
+        indent += "│  ";
+    }
+    
+    string connector = isLast ? "└─ " : "├─ ";
+    if (depth > 0) {
+        cout << indent.substr(0, indent.length() - 4) << connector;
+    }
+    
+    cout << symbol;
+    if (!lexeme.empty()) {
+        cout << " (" << lexeme << ")";
+    }
+    cout << endl;
+    
+    for (size_t i = 0; i < children.size(); i++) {
+        children[i]->printTreeEnhanced(depth + 1, i == children.size() - 1);
+    }
+}
+
+void ParseTreeNode::exportToDot(ostream& os, int& nodeCounter, int parentId) const {
+    int myId = nodeCounter++;
+    
+    // Tạo node
+    os << "  node" << myId << " [label=\"" << symbol;
+    if (!lexeme.empty()) {
+        os << "\\n(" << lexeme << ")";
+    }
+    os << "\"];" << endl;
+    
+    // Kết nối với node cha
+    if (parentId != -1) {
+        os << "  node" << parentId << " -> node" << myId << ";" << endl;
+    }
+    
+    // Tiếp tục với các node con
+    for (const auto& child : children) {
+        child->exportToDot(os, nodeCounter, myId);
+    }
+}
+
+void ParseTreeNode::exportFullTreeToDot(const string& filename) const {
+    ofstream dotFile(filename);
+    if (!dotFile.is_open()) {
+        cerr << "Error: Cannot open file " << filename << " for writing." << endl;
+        return;
+    }
+    
+    int counter = 0;
+    
+    dotFile << "digraph ParseTree {" << endl;
+    dotFile << "  node [shape=box, fontname=\"Arial\", fontsize=10];" << endl;
+    
+    exportToDot(dotFile, counter);
+    
+    dotFile << "}" << endl;
+    dotFile.close();
+    
+    cout << "Parse tree exported to " << filename << endl;
+    cout << "Run 'dot -Tpng " << filename << " -o tree.png' to generate image" << endl;
+}
+//========================================= ParseTreeNode =========================================
+
+//======================================== GrammarAnalyzer ========================================
 bool GrammarAnalyzer::isTerminal(const string& symbol) const {
     return terminals.find(symbol) != terminals.end();
 }
@@ -319,7 +386,9 @@ void GrammarAnalyzer::printParsingTable() const {
         std::cout << std::endl;
     }
 }
+//======================================== GrammarAnalyzer ========================================
 
+//=========================================== LL1Parser ===========================================
 bool LL1Parser::parse() {
     // Khởi tạo như trước
     map<int, shared_ptr<ParseTreeNode>> stackNodeMap;
@@ -477,3 +546,4 @@ void LL1Parser::skipToSynchronizingToken() {
         currentToken = lexer.nextToken();
     }
 }
+//=========================================== LL1Parser ===========================================

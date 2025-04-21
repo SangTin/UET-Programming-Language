@@ -48,6 +48,10 @@ struct ParseTreeNode {
             child->printTree(depth + 1);
         }
     }
+
+    void printTreeEnhanced(int depth = 0, bool isLast = true) const;
+    void exportToDot(ostream& os, int& nodeCounter, int parentId = -1) const;
+    void exportFullTreeToDot(const string& filename) const;
 };
 
 struct Production {
@@ -183,5 +187,21 @@ public:
 
     void printErrors() const {
         errorReporter.printErrors();
+    }
+
+    void printEnhancedParseTree() const {
+        if (parseTree) {
+            parseTree->printTreeEnhanced();
+        } else {
+            cout << "No parse tree available." << endl;
+        }
+    }
+    
+    void exportParseTreeToDot(const string& filename) const {
+        if (parseTree) {
+            parseTree->exportFullTreeToDot(filename);
+        } else {
+            cout << "No parse tree available to export." << endl;
+        }
     }
 };
