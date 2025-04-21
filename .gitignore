@@ -1,0 +1,91 @@
+# Ignore files without extension
+*
+!*/
+!*.cpp
+!*.hpp
+!*.h
+!*.txt
+!*.md
+!*.tex
+!*.pdf
+!*.sh
+!Makefile
+!.gitignore
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Build directories
+build/
+bin/
+libs/
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Logging and debug files
+*.log
+core
+core.*
+
+# Flex/Bison generated files
+*.tab.c
+*.tab.h
+lex.yy.c
+
+# Compiler/Linker outputs
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Allow specific files without extension 
+# (uncomment and modify as needed)
+# !parser
+# !lexer
+# !main
+
+# Allow script files without extension
+!run.sh
