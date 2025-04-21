@@ -1,9 +1,5 @@
 #include "parser.hpp"
 
-void reportError(const string& message) {
-    cerr << "Error: " << message << endl;
-}
-
 vector<string> splitSymbols(const string& str) {
     vector<string> result;
     stringstream ss(str);
@@ -337,7 +333,6 @@ bool LL1Parser::parse() {
     parseStack.push({grammarAnalyzer.getStartSymbol(), nextNodeId++});
 
     currentToken = lexer.nextToken();
-    bool hasErrors = false;
     
     // Xác định các non-terminal có thể sinh ra epsilon
     set<string> canDeriveEpsilon = computeEpsilonDerivingNonTerminals();
@@ -348,17 +343,26 @@ bool LL1Parser::parse() {
 
         // Xử lý lỗi từ vựng
         if (currentToken.type == TokenType::L_TOKEN_ERROR) {
-            reportError("Lexical error: " + currentToken.message + 
-                      " at line " + to_string(currentToken.line));
-            hasErrors = true;
+            errorReporter.reportError(currentToken.line, currentToken.column, currentToken.message);
+            
+            // Bỏ qua token lỗi và tìm điểm đồng bộ
             currentToken = lexer.nextToken();
+            
+            while (currentToken.type == TokenType::L_TOKEN_ERROR && !lexer.isAtEnd()) {
+                errorReporter.reportError(currentToken.line, currentToken.column, currentToken.message);
+                currentToken = lexer.nextToken();
+            }
+            
+            skipToSynchronizingToken();
+            
+            parseStack.push({top, nodeId});
             continue;
         }
 
         if (grammarAnalyzer.isTerminal(top) || top == grammarAnalyzer.getEndMarker()) {
             if (top == tokenTypeName(currentToken.type) || 
                 (top == grammarAnalyzer.getEndMarker() && currentToken.type == TokenType::L_TOKEN_EOF)) {
-                // Xử lý khớp terminal như cũ
+                // Khớp terminal
                 if (nodeId != -1) {
                     auto terminalNode = make_shared<ParseTreeNode>(top);
                     terminalNode->lexeme = currentToken.lexeme;
@@ -370,9 +374,8 @@ bool LL1Parser::parse() {
                 }
             } else {
                 // Lỗi khớp terminal
-                reportError("Expected " + top + " but found " + tokenTypeName(currentToken.type) + 
-                          " at line " + to_string(currentToken.line));
-                hasErrors = true;
+                errorReporter.reportError(currentToken.line, currentToken.column, 
+                    "Expected " + top + " but found " + tokenTypeName(currentToken.type));
                 
                 continue;
             }
@@ -381,24 +384,14 @@ bool LL1Parser::parse() {
             int productionNumber = grammarAnalyzer.getParseTableEntry(top, tokenTypeName(currentToken.type));
 
             if (productionNumber == -1) {
-                // Lỗi không tìm thấy quy tắc sản xuất
-                reportError("No production for " + top + " with " + 
-                          tokenTypeName(currentToken.type) + " at line " + to_string(currentToken.line));
-                hasErrors = true;
-                
-                // Cách 2: Kiểm tra xem non-terminal có thể sinh ra epsilon không
+                // Kiểm tra xem non-terminal có thể sinh ra epsilon không
                 if (canDeriveEpsilon.find(top) != canDeriveEpsilon.end()) {
-                    // Áp dụng quy tắc epsilon - không đẩy gì vào stack, bỏ qua non-terminal này
-                    reportError("Assuming " + top + " derives epsilon at line " + 
-                              to_string(currentToken.line));
-                    
                     // Thêm node epsilon vào cây parse nếu cần
                     if (nodeId != -1) {
                         auto& node = stackNodeMap[nodeId];
                         node->production = {grammarAnalyzer.getEpsilon()};
                     }
                     
-                    // Tiếp tục mà không đẩy gì vào stack
                     continue;
                 } else {
                     // Nếu không thể sinh ra epsilon, bỏ qua token hiện tại
@@ -445,7 +438,7 @@ bool LL1Parser::parse() {
         }
     }
 
-    return !hasErrors && lexer.isAtEnd();
+    return !errorReporter.errorsFound() && lexer.isAtEnd();
 }
 
 // Phương thức để bỏ qua đến khi gặp token cụ thể
@@ -454,16 +447,6 @@ void LL1Parser::skipToToken(TokenType targetToken) {
            currentToken.type != TokenType::L_TOKEN_EOF) {
         currentToken = lexer.nextToken();
     }
-}
-
-// Kiểm tra xem non-terminal có phải là một phần quan trọng của ngữ cảnh phân tích
-bool LL1Parser::isContextualNonTerminal(const string& symbol) {
-    static set<string> contextualSymbols = {
-        "stmt", "stmts", "if_stmt", "for_stmt", "do_while_stmt", 
-        "block_stmt", "expression"
-    };
-    
-    return contextualSymbols.find(symbol) != contextualSymbols.end();
 }
 
 set<string> LL1Parser::computeEpsilonDerivingNonTerminals() {
@@ -486,4 +469,11 @@ set<string> LL1Parser::computeEpsilonDerivingNonTerminals() {
     }
     
     return result;
+}
+
+void LL1Parser::skipToSynchronizingToken() {
+    while (synchronizationTokens.find(currentToken.type) == synchronizationTokens.end() && 
+           currentToken.type != TokenType::L_TOKEN_EOF) {
+        currentToken = lexer.nextToken();
+    }
 }

@@ -133,10 +133,21 @@ private:
 class LL1Parser {
 private:
     set<TokenType> synchronizationTokens = {
-        L_TOKEN_BEGIN, L_TOKEN_END, L_TOKEN_IF, L_TOKEN_THEN, L_TOKEN_ELSE,
-        L_TOKEN_DO, L_TOKEN_WHILE, L_TOKEN_FOR, L_TOKEN_PRINT,
-        L_TOKEN_INT, L_TOKEN_BOOL, L_TOKEN_LEFT_BRACE, L_TOKEN_RIGHT_BRACE,
-        L_TOKEN_SEMICOLON
+        L_TOKEN_SEMICOLON,     // Kết thúc phát biểu (;)
+        L_TOKEN_BEGIN,         // Bắt đầu chương trình
+        L_TOKEN_END,           // Kết thúc chương trình
+        L_TOKEN_LEFT_BRACE,    // Bắt đầu khối lệnh ({)
+        L_TOKEN_RIGHT_BRACE,   // Kết thúc khối lệnh (})
+        L_TOKEN_IF,            // Bắt đầu phát biểu if
+        L_TOKEN_THEN,          // Phần then của if
+        L_TOKEN_ELSE,          // Phần else của if
+        L_TOKEN_DO,            // Bắt đầu vòng lặp do
+        L_TOKEN_WHILE,         // Bắt đầu/kết thúc vòng lặp
+        L_TOKEN_FOR,           // Bắt đầu vòng lặp for
+        L_TOKEN_PRINT,         // Phát biểu print
+        L_TOKEN_INT,           // Khai báo kiểu int
+        L_TOKEN_BOOL,          // Khai báo kiểu bool
+        L_TOKEN_RIGHT_PAREN    // Kết thúc biểu thức trong ngoặc
     };
 
     GrammarAnalyzer grammarAnalyzer;
@@ -148,13 +159,9 @@ private:
 
     bool parse();
     void skipToToken(TokenType targetToken);
-    bool isContextualNonTerminal(const string& symbol);
-
-    void reportError(const string& message) {
-        errorReporter.reportError(currentToken.line, currentToken.column, message);
-    }
 
     set<string> computeEpsilonDerivingNonTerminals();
+    void skipToSynchronizingToken();
 public:
     LL1Parser(const string& grammarFile, const string& inputFile)
         : lexer(inputFile) {
