@@ -325,90 +325,166 @@ void GrammarAnalyzer::printParsingTable() const {
 }
 
 bool LL1Parser::parse() {
-    // Map để theo dõi các node trong stack
+    // Khởi tạo như trước
     map<int, shared_ptr<ParseTreeNode>> stackNodeMap;
-    
-    stack<pair<string, int>> parseStack; // Thêm ID cho mỗi node
+    stack<pair<string, int>> parseStack;
     int nextNodeId = 0;
     
-    // Tạo node gốc
     parseTree = make_shared<ParseTreeNode>(grammarAnalyzer.getStartSymbol());
     stackNodeMap[nextNodeId] = parseTree;
     
-    parseStack.push({grammarAnalyzer.getEndMarker(), -1}); // -1 nghĩa là không có node
+    parseStack.push({grammarAnalyzer.getEndMarker(), -1});
     parseStack.push({grammarAnalyzer.getStartSymbol(), nextNodeId++});
 
     currentToken = lexer.nextToken();
-
-    while (!parseStack.empty()) {
+    bool hasErrors = false;
+    
+    // Xác định các non-terminal có thể sinh ra epsilon
+    set<string> canDeriveEpsilon = computeEpsilonDerivingNonTerminals();
+    
+    while (!parseStack.empty() && !lexer.isAtEnd()) {
         auto [top, nodeId] = parseStack.top();
         parseStack.pop();
+
+        // Xử lý lỗi từ vựng
+        if (currentToken.type == TokenType::L_TOKEN_ERROR) {
+            reportError("Lexical error: " + currentToken.message + 
+                      " at line " + to_string(currentToken.line));
+            hasErrors = true;
+            currentToken = lexer.nextToken();
+            continue;
+        }
 
         if (grammarAnalyzer.isTerminal(top) || top == grammarAnalyzer.getEndMarker()) {
             if (top == tokenTypeName(currentToken.type) || 
                 (top == grammarAnalyzer.getEndMarker() && currentToken.type == TokenType::L_TOKEN_EOF)) {
-                    
-                    // Thêm node terminal vào cây
-                    if (nodeId != -1) {
-                        auto terminalNode = make_shared<ParseTreeNode>(top);
-                        terminalNode->lexeme = currentToken.lexeme;
-                        stackNodeMap[nodeId]->addChild(terminalNode);
-                    }
-                    
-                    if (top != grammarAnalyzer.getEndMarker()) {
-                        currentToken = lexer.nextToken();
-                    }
-                } else {
-                    // Lỗi khớp
-                    reportError("Expected " + top + " but found " + tokenTypeName(currentToken.type) + 
-                               " at line " + to_string(currentToken.line));
-                    return false;
+                // Xử lý khớp terminal như cũ
+                if (nodeId != -1) {
+                    auto terminalNode = make_shared<ParseTreeNode>(top);
+                    terminalNode->lexeme = currentToken.lexeme;
+                    stackNodeMap[nodeId]->addChild(terminalNode);
                 }
+                
+                if (top != grammarAnalyzer.getEndMarker()) {
+                    currentToken = lexer.nextToken();
+                }
+            } else {
+                // Lỗi khớp terminal
+                reportError("Expected " + top + " but found " + tokenTypeName(currentToken.type) + 
+                          " at line " + to_string(currentToken.line));
+                hasErrors = true;
+                
+                // Giả sử bỏ qua terminal this và tiếp tục
+                continue;
+            }
         } else {
+            // Xử lý non-terminal
             int productionNumber = grammarAnalyzer.getParseTableEntry(top, tokenTypeName(currentToken.type));
 
             if (productionNumber == -1) {
                 // Lỗi không tìm thấy quy tắc sản xuất
                 reportError("No production for " + top + " with " + 
-                           tokenTypeName(currentToken.type) + " at line " + to_string(currentToken.line));
-                return false;
-            }
-
-            const auto& production = grammarAnalyzer.getProduction(productionNumber);
-            
-            // Thêm thông tin về quy tắc sản xuất vào node
-            if (nodeId != -1) {
-                auto& node = stackNodeMap[nodeId];
-                node->production = production.rhs;
+                          tokenTypeName(currentToken.type) + " at line " + to_string(currentToken.line));
+                hasErrors = true;
                 
-                // Tạo các node con
-                vector<shared_ptr<ParseTreeNode>> childNodes;
-                for (const auto& symbol : production.rhs) {
-                    if (symbol != grammarAnalyzer.getEpsilon()) {
-                        auto childNode = make_shared<ParseTreeNode>(symbol);
-                        node->addChild(childNode);
-                        childNodes.push_back(childNode);
+                // Cách 2: Kiểm tra xem non-terminal có thể sinh ra epsilon không
+                if (canDeriveEpsilon.find(top) != canDeriveEpsilon.end()) {
+                    // Áp dụng quy tắc epsilon - không đẩy gì vào stack, bỏ qua non-terminal này
+                    reportError("Assuming " + top + " derives epsilon at line " + 
+                              to_string(currentToken.line));
+                    
+                    // Thêm node epsilon vào cây parse nếu cần
+                    if (nodeId != -1) {
+                        auto& node = stackNodeMap[nodeId];
+                        node->production = {grammarAnalyzer.getEpsilon()};
                     }
-                }
-                
-                // Đẩy quy tắc sản xuất vào stack theo thứ tự ngược lại
-                for (int i = production.rhs.size() - 1; i >= 0; i--) {
-                    if (production.rhs[i] != grammarAnalyzer.getEpsilon()) {
-                        int childNodeId = nextNodeId++;
-                        stackNodeMap[childNodeId] = childNodes[i];
-                        parseStack.push({production.rhs[i], childNodeId});
-                    }
+                    
+                    // Tiếp tục mà không đẩy gì vào stack
+                    continue;
+                } else {
+                    // Nếu không thể sinh ra epsilon, bỏ qua token hiện tại
+                    currentToken = lexer.nextToken();
+                    // Đẩy lại non-terminal vào stack
+                    parseStack.push({top, nodeId});
                 }
             } else {
-                // Trường hợp không cần xây dựng node (như $ cuối cùng)
-                for (auto it = production.rhs.rbegin(); it != production.rhs.rend(); ++it) {
-                    if (*it != grammarAnalyzer.getEpsilon()) {
-                        parseStack.push({*it, -1});
+                // Áp dụng quy tắc sản xuất như cũ
+                const auto& production = grammarAnalyzer.getProduction(productionNumber);
+                
+                // Cập nhật node trong cây parse
+                if (nodeId != -1) {
+                    auto& node = stackNodeMap[nodeId];
+                    node->production = production.rhs;
+                    
+                    // Tạo các node con
+                    vector<shared_ptr<ParseTreeNode>> childNodes;
+                    for (const auto& symbol : production.rhs) {
+                        if (symbol != grammarAnalyzer.getEpsilon()) {
+                            auto childNode = make_shared<ParseTreeNode>(symbol);
+                            node->addChild(childNode);
+                            childNodes.push_back(childNode);
+                        }
+                    }
+                    
+                    // Đẩy quy tắc sản xuất vào stack
+                    for (int i = production.rhs.size() - 1; i >= 0; i--) {
+                        if (production.rhs[i] != grammarAnalyzer.getEpsilon()) {
+                            int childNodeId = nextNodeId++;
+                            stackNodeMap[childNodeId] = childNodes[i];
+                            parseStack.push({production.rhs[i], childNodeId});
+                        }
+                    }
+                } else {
+                    // Trường hợp không cần xây dựng node
+                    for (auto it = production.rhs.rbegin(); it != production.rhs.rend(); ++it) {
+                        if (*it != grammarAnalyzer.getEpsilon()) {
+                            parseStack.push({*it, -1});
+                        }
                     }
                 }
             }
         }
     }
 
-    return currentToken.type == TokenType::L_TOKEN_EOF;
+    return !hasErrors && lexer.isAtEnd();
+}
+
+// Phương thức để bỏ qua đến khi gặp token cụ thể
+void LL1Parser::skipToToken(TokenType targetToken) {
+    while (currentToken.type != targetToken && 
+           currentToken.type != TokenType::L_TOKEN_EOF) {
+        currentToken = lexer.nextToken();
+    }
+}
+
+// Kiểm tra xem non-terminal có phải là một phần quan trọng của ngữ cảnh phân tích
+bool LL1Parser::isContextualNonTerminal(const string& symbol) {
+    static set<string> contextualSymbols = {
+        "stmt", "stmts", "if_stmt", "for_stmt", "do_while_stmt", 
+        "block_stmt", "expression"
+    };
+    
+    return contextualSymbols.find(symbol) != contextualSymbols.end();
+}
+
+set<string> LL1Parser::computeEpsilonDerivingNonTerminals() {
+    set<string> result;
+    
+    // Duyệt qua tất cả các quy tắc sản xuất
+    for (const auto& production : grammarAnalyzer.getProductions()) {
+        // Kiểm tra nếu quy tắc trực tiếp sinh ra epsilon
+        if (production.rhs.size() == 1 && production.rhs[0] == grammarAnalyzer.getEpsilon()) {
+            result.insert(production.lhs);
+        }
+    }
+    
+    // Kiểm tra từ tập FIRST
+    for (const auto& nonTerminal : grammarAnalyzer.getNonTerminals()) {
+        const auto& firstSet = grammarAnalyzer.getFirstSet(nonTerminal);
+        if (firstSet.find(grammarAnalyzer.getEpsilon()) != firstSet.end()) {
+            result.insert(nonTerminal);
+        }
+    }
+    
+    return result;
 }

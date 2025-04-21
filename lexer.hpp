@@ -16,16 +16,16 @@ string tokenTypeName(TokenType type);
 struct Token {
     TokenType type;
     string message, lexeme;
-    int line;
+    int line, column;
 
     Token() = default;
     
-    Token(TokenType type, const string& lexeme, int line, const string& message = "")
-        : type(type), message(message), lexeme(lexeme), line(line) {}
+    Token(TokenType type, const string& lexeme, int line, int column, const string& message = "")
+        : type(type), message(message), lexeme(lexeme), line(line), column(column) {}
 
     friend ostream& operator<<(ostream& os, const Token& token) {
         if (token.type == L_TOKEN_ERROR) {
-            os << "ERROR: " << token.message << " at line " << token.line;
+            os << "ERROR: " << token.message << " at line " << token.line << ", column " << token.column;
         } else if (token.message.empty()) {
             os << tokenTypeName(token.type);
         } else {
@@ -189,6 +189,9 @@ public:
 
     vector<Token> scanTokens();
     Token nextToken();
+    bool isAtEnd() const {
+        return reader->isAtEnd();
+    }
 
 private:
     void skipWhitespace();

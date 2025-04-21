@@ -1,5 +1,6 @@
 #include <bits/stdc++.h>
 #include "lexer.hpp"
+#include "error_reporter.hpp"
 
 using namespace std;
 
@@ -108,6 +109,14 @@ public:
     const Production& getProduction(int index) const {
         return productions[index];
     }
+    const set<string>& getTerminals() const { return terminals; }
+    const set<string>& getNonTerminals() const { return nonTerminals; }
+    const set<string>& getFirstSet(const string& symbol) const {
+        return firstSets.at(symbol);
+    }
+    const vector<Production>& getProductions() const {
+        return productions;
+    }
     
     // Debugging
     void printProductions() const;
@@ -123,26 +132,37 @@ private:
 
 class LL1Parser {
 private:
+    set<TokenType> synchronizationTokens = {
+        L_TOKEN_BEGIN, L_TOKEN_END, L_TOKEN_IF, L_TOKEN_THEN, L_TOKEN_ELSE,
+        L_TOKEN_DO, L_TOKEN_WHILE, L_TOKEN_FOR, L_TOKEN_PRINT,
+        L_TOKEN_INT, L_TOKEN_BOOL, L_TOKEN_LEFT_BRACE, L_TOKEN_RIGHT_BRACE,
+        L_TOKEN_SEMICOLON
+    };
+
     GrammarAnalyzer grammarAnalyzer;
+    ErrorReporter errorReporter = ErrorReporter();
     Lexer lexer;
     Token currentToken;
 
     shared_ptr<ParseTreeNode> parseTree;
 
     bool parse();
+    void skipToToken(TokenType targetToken);
+    bool isContextualNonTerminal(const string& symbol);
 
+    void reportError(const string& message) {
+        errorReporter.reportError(currentToken.line, currentToken.column, message);
+    }
+
+    set<string> computeEpsilonDerivingNonTerminals();
 public:
     LL1Parser(const string& grammarFile, const string& inputFile)
         : lexer(inputFile) {
         grammarAnalyzer.loadGrammar(grammarFile);
     }
 
-    void parseInput() {
-        if (parse()) {
-            cout << "Parsing successful!" << endl;
-        } else {
-            cout << "Parsing failed!" << endl;
-        }
+    bool parseInput() {
+        return parse();
     }
 
     void printParseTree() const {
@@ -152,5 +172,9 @@ public:
         } else {
             cout << "No parse tree available." << endl;
         }
+    }
+
+    void printErrors() const {
+        errorReporter.printErrors();
     }
 };

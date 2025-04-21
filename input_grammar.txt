@@ -3,6 +3,7 @@ program -> BEGIN stmts END
 
 # Các phát biểu
 stmts -> stmt stmts_tail
+stmts -> ε
 stmts_tail -> stmt stmts_tail
 stmts_tail -> ε
 
@@ -45,8 +46,8 @@ id_tail -> ε
 assignment -> IDENTIFIER ASSIGN expression
 
 # Phát biểu if-then-else - sửa đổi
-if_stmt -> IF LEFT_PAREN expression RIGHT_PAREN THEN stmt else_part
-else_part -> ELSE stmt
+if_stmt -> IF LEFT_PAREN expression RIGHT_PAREN THEN LEFT_BRACE stmts RIGHT_BRACE else_part
+else_part -> ELSE LEFT_BRACE stmts RIGHT_BRACE
 else_part -> ε
 
 # Phát biểu do-while

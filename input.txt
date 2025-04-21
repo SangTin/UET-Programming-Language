@@ -1,8 +1,4 @@
 begin
-// Declare variables
-int x12;/*
-comment block
-*/
-bool flag
-print(x12 + 5); /* Print initial value */
+  int x = 5;
+  if (true) then {
 end
