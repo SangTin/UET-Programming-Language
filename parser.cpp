@@ -342,7 +342,7 @@ bool LL1Parser::parse() {
     // Xác định các non-terminal có thể sinh ra epsilon
     set<string> canDeriveEpsilon = computeEpsilonDerivingNonTerminals();
     
-    while (!parseStack.empty() && !lexer.isAtEnd()) {
+    while (!parseStack.empty()) {
         auto [top, nodeId] = parseStack.top();
         parseStack.pop();
 
@@ -374,7 +374,6 @@ bool LL1Parser::parse() {
                           " at line " + to_string(currentToken.line));
                 hasErrors = true;
                 
-                // Giả sử bỏ qua terminal this và tiếp tục
                 continue;
             }
         } else {
