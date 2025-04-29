@@ -92,3 +92,5 @@ Thumbs.db
 
 # Allow script files without extension
 !run.sh
+
+bottom-up/

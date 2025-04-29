@@ -204,4 +204,34 @@ public:
             cout << "No parse tree available to export." << endl;
         }
     }
+
+    void printParsingTable() const {
+        grammarAnalyzer.printParsingTable();
+    }
+
+    void printProductions() const {
+        grammarAnalyzer.printProductions();
+    }
+
+    void printFirstSets() const {
+        grammarAnalyzer.printFirstSets();
+    }
+
+    void printFollowSets() const {
+        grammarAnalyzer.printFollowSets();
+    }
+
+    void printTerminals() const {
+        cout << "Terminals:" << endl;
+        for (const auto& terminal : grammarAnalyzer.getTerminals()) {
+            cout << terminal << endl;
+        }
+    }
+
+    void printNonTerminals() const {
+        cout << "Non-terminals:" << endl;
+        for (const auto& nonTerminal : grammarAnalyzer.getNonTerminals()) {
+            cout << nonTerminal << endl;
+        }
+    }
 };

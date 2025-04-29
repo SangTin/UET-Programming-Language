@@ -1,26 +1,35 @@
 begin
-	int x;
-	int y=x+1;
-	/*	comments
-	cho nhiều dòng
-	*/
-	
-	bool a;//comment cho một dòng
-	if (x>a) then{
-		int c=1;
-	}else{
-		y=x;
-		x=x+1;
-	}
-	print(a);
-	if (x>=a) then{
-	x=x+1;
-}
-	bool x=a==b;
-	do{
-		int b=1;
-		b=b*10;
-		a=(b+10)*b;
-	}while(a>1);
-	print(a+1);
+  // Lexical errors
+  
+  // Invalid identifier (starts with a digit)
+  // int 1abc = 10;
+  
+  // Invalid identifier (contains special characters)
+  // int x@y = 20;
+  
+  // Valid identifier followed by more alphanumeric characters
+  int abc123;
+  
+  // Unterminated comment
+  /* This comment is not properly terminated*/
+  
+  // Syntax errors
+  
+  // Missing semicolon
+  int x = 5
+  
+  // Missing parenthesis
+  if (x > 5 then { print(x); }
+  
+  // Missing right brace
+  if (true) then {
+    print(1);
+  // Missing closing brace
+  
+  // These lines are commented out because they would cause errors
+  // The parser should handle the valid parts and report errors for invalid parts
+  
+  // Valid code to ensure the program has some valid content
+  int validVar = 100;
+  print(validVar;
 end
