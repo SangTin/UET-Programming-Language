@@ -432,10 +432,16 @@ bool LL1Parser::parse() {
             if (top == tokenTypeName(currentToken.type) || 
                 (top == grammarAnalyzer.getEndMarker() && currentToken.type == TokenType::L_TOKEN_EOF)) {
                 // Khớp terminal
-                if (nodeId != -1) {
-                    auto terminalNode = make_shared<ParseTreeNode>(top);
-                    terminalNode->lexeme = currentToken.lexeme;
-                    stackNodeMap[nodeId]->addChild(terminalNode);
+                if (nodeId != -1 && stackNodeMap.find(nodeId) != stackNodeMap.end()) {
+                    auto node = stackNodeMap[nodeId];
+                    
+                    // FIX: Lưu đúng lexeme từ currentToken
+                    if (!currentToken.lexeme.empty()) {
+                        node->setLexeme(currentToken.lexeme);
+                    } else {
+                        // Fallback cho các token không có lexeme
+                        node->setLexeme(tokenTypeName(currentToken.type));
+                    }
                 }
                 
                 if (top != grammarAnalyzer.getEndMarker()) {
@@ -545,5 +551,592 @@ void LL1Parser::skipToSynchronizingToken() {
            currentToken.type != TokenType::L_TOKEN_EOF) {
         currentToken = lexer.nextToken();
     }
+}
+
+void LL1Parser::generateIntermediateCode() {
+    if (!parseTree) {
+        cout << "No parse tree available for code generation." << endl;
+        return;
+    }
+    
+    cout << "Starting intermediate code generation..." << endl;
+    traverseAndGenerate(parseTree);
+}
+
+void LL1Parser::printIntermediateCode() {
+    codeGen.printCode();
+}
+
+void LL1Parser::traverseAndGenerate(shared_ptr<ParseTreeNode> node) {
+    if (!node) return;
+    
+    if (node->symbol == "if_stmt") {
+        handleIfStatement(node);
+        return;
+    }
+
+    if (node->symbol == "do_while_stmt") {
+        handleDoWhile(node);
+        return;
+    }
+
+    if (node->symbol == "for_stmt") {
+        handleForLoop(node);
+        return;
+    }
+
+    // Xử lý các con trước (bottom-up approach)
+    for (auto child : node->children) {
+        traverseAndGenerate(child);
+    }
+    
+    // Sinh mã cho node hiện tại dựa trên loại production
+    string symbol = node->symbol;
+    
+    if (symbol == "expression") {
+        handleExpression(node);
+    } else if (symbol == "addition") {
+        handleAddition(node);
+    } else if (symbol == "multiplication") {
+        handleMultiplication(node);
+    } else if (symbol == "factor") {
+        handleFactor(node);
+    } else if (symbol == "assignment") {
+        handleAssignment(node);
+    } else if (symbol == "declaration") {
+        handleDeclaration(node);
+    } else if (symbol == "declaration_tail") {
+        handleDeclarationTail(node);
+    } else if (symbol == "if_stmt") {
+        handleIfStatement(node);
+    } else if (symbol == "do_while_stmt") {
+        handleDoWhile(node);
+    } else if (symbol == "for_stmt") {
+        handleForLoop(node);
+    } else if (symbol == "print_stmt") {
+        handlePrintStatement(node);
+    } else if (symbol == "stmt") {
+        handleStatement(node);
+    } else if (symbol == "stmts") {
+        handleStatements(node);
+    }
+}
+
+void LL1Parser::handleFactor(shared_ptr<ParseTreeNode> node) {
+    auto children = node->children;
+    
+    if (children.size() == 1) {
+        auto child = children[0];
+        string childSymbol = child->symbol;
+        
+        if (childSymbol == "IDENTIFIER" || childSymbol == "NUMBER" || 
+            childSymbol == "TRUE" || childSymbol == "FALSE") {
+            
+            string value = child->getLexeme();
+            if (value.empty()) {
+                // Fallback nếu không có lexeme
+                if (childSymbol == "TRUE") value = "true";
+                else if (childSymbol == "FALSE") value = "false";
+                else value = childSymbol; // Tạm thời
+            }
+            
+            node->setAddr(value);
+            node->setCode("");
+        }
+    } else if (children.size() == 3) {
+        // factor -> LEFT_PAREN expression RIGHT_PAREN
+        auto expr = children[1]; // expression
+        node->setAddr(expr->getAddr());
+        node->setCode(expr->getCode());
+    }
+}
+
+void LL1Parser::handleMultiplication(shared_ptr<ParseTreeNode> node) {
+    auto children = node->children;
+    
+    if (children.size() == 2) {
+        // multiplication -> factor multiplication_tail
+        auto factor = children[0];        // factor
+        auto mult_tail = children[1];     // multiplication_tail
+        
+        // Bắt đầu với factor
+        node->setAddr(factor->getAddr());
+        node->setCode(factor->getCode());
+        
+        // Xử lý multiplication_tail để tạo chuỗi phép nhân
+        handleMultiplicationTail(node, mult_tail);
+    }
+}
+
+void LL1Parser::handleMultiplicationTail(shared_ptr<ParseTreeNode> currentResult, shared_ptr<ParseTreeNode> tailNode) {
+    auto children = tailNode->children;
+    
+    if (children.empty() || (children.size() == 1 && children[0]->symbol == "ε")) {
+        // multiplication_tail -> ε (base case)
+        return;
+    }
+    
+    if (children.size() == 3) {
+        // multiplication_tail -> MULTIPLY factor multiplication_tail
+        auto multiply_op = children[0];   // MULTIPLY
+        auto factor = children[1];        // factor
+        auto next_tail = children[2];     // multiplication_tail
+        
+        // Tạo temp mới cho phép nhân hiện tại
+        string temp = codeGen.newTemp();
+        codeGen.emit("*", currentResult->getAddr(), factor->getAddr(), temp);
+        
+        // Cập nhật kết quả hiện tại
+        currentResult->setAddr(temp);
+        currentResult->setCode(currentResult->getCode() + factor->getCode());
+        
+        // Đệ quy xử lý phần tail còn lại
+        handleMultiplicationTail(currentResult, next_tail);
+    }
+}
+
+void LL1Parser::handleAddition(shared_ptr<ParseTreeNode> node) {
+    auto children = node->children;
+    
+    if (children.size() == 2) {
+        // addition -> multiplication addition_tail
+        auto multiplication = children[0];  // multiplication
+        auto add_tail = children[1];        // addition_tail
+        
+        // Bắt đầu với multiplication
+        node->setAddr(multiplication->getAddr());
+        node->setCode(multiplication->getCode());
+        
+        // Xử lý addition_tail để tạo chuỗi phép cộng
+        handleAdditionTail(node, add_tail);
+    }
+}
+
+void LL1Parser::handleAdditionTail(shared_ptr<ParseTreeNode> currentResult, shared_ptr<ParseTreeNode> tailNode) {
+    auto children = tailNode->children;
+    
+    if (children.empty() || (children.size() == 1 && children[0]->symbol == "ε")) {
+        // addition_tail -> ε (base case)
+        return;
+    }
+    
+    if (children.size() == 3) {
+        // addition_tail -> PLUS multiplication addition_tail
+        auto plus_op = children[0];       // PLUS
+        auto multiplication = children[1]; // multiplication
+        auto next_tail = children[2];     // addition_tail
+        
+        // Tạo temp mới cho phép cộng hiện tại
+        string temp = codeGen.newTemp();
+        codeGen.emit("+", currentResult->getAddr(), multiplication->getAddr(), temp);
+        
+        // Cập nhật kết quả hiện tại
+        currentResult->setAddr(temp);
+        currentResult->setCode(currentResult->getCode() + multiplication->getCode());
+        
+        // Đệ quy xử lý phần tail còn lại
+        handleAdditionTail(currentResult, next_tail);
+    }
+}
+
+void LL1Parser::handleExpression(shared_ptr<ParseTreeNode> node) {
+    auto children = node->children;
+    
+    if (children.size() == 2) {
+        // expression -> addition expression_tail
+        auto addition = children[0];      // addition
+        auto expr_tail = children[1];     // expression_tail
+        
+        // Bắt đầu với addition
+        node->setAddr(addition->getAddr());
+        node->setCode(addition->getCode());
+        
+        // Xử lý expression_tail để tạo chuỗi phép so sánh
+        handleExpressionTail(node, expr_tail);
+    }
+}
+
+void LL1Parser::handleExpressionTail(shared_ptr<ParseTreeNode> currentResult, shared_ptr<ParseTreeNode> tailNode) {
+    auto children = tailNode->children;
+    
+    if (children.empty() || (children.size() == 1 && children[0]->symbol == "ε")) {
+        // expression_tail -> ε (base case)
+        return;
+    }
+    
+    if (children.size() == 3) {
+        // expression_tail -> relop addition expression_tail
+        auto relop = children[0];         // relop (>, >=, ==)
+        auto addition = children[1];      // addition
+        auto next_tail = children[2];     // expression_tail
+        
+        // Lấy operator từ relop node
+        string op = getRelopOperator(relop);
+        
+        // Tạo temp mới cho phép so sánh hiện tại
+        string temp = codeGen.newTemp();
+        codeGen.emit(op, currentResult->getAddr(), addition->getAddr(), temp);
+        
+        // Cập nhật kết quả hiện tại
+        currentResult->setAddr(temp);
+        currentResult->setCode(currentResult->getCode() + addition->getCode());
+        
+        // Đệ quy xử lý phần tail còn lại
+        handleExpressionTail(currentResult, next_tail);
+    }
+}
+
+// Helper method để lấy operator từ relop node
+string LL1Parser::getRelopOperator(shared_ptr<ParseTreeNode> relopNode) {
+    // relop -> GREATER | GREATER_EQUAL | EQUAL
+    if (!relopNode->children.empty()) {
+        auto opNode = relopNode->children[0];
+        string opSymbol = opNode->symbol;
+        
+        if (opSymbol == "GREATER") return ">";
+        else if (opSymbol == "GREATER_EQUAL") return ">=";
+        else if (opSymbol == "EQUAL") return "==";
+    }
+    return ">"; // default
+}
+
+void LL1Parser::handleAssignment(shared_ptr<ParseTreeNode> node) {
+    auto children = node->children;
+    
+    if (children.size() == 3) {
+        // assignment -> IDENTIFIER ASSIGN expression
+        auto id = children[0];      // IDENTIFIER
+        auto assign = children[1];  // ASSIGN
+        auto expr = children[2];    // expression
+        
+        string varName = id->getLexeme().empty() ? id->symbol : id->getLexeme();
+        
+        codeGen.emit("=", expr->getAddr(), "", varName);
+        
+        string code = expr->getCode();
+        node->setCode(code);
+    }
+}
+
+void LL1Parser::handleDeclaration(shared_ptr<ParseTreeNode> node) {
+    auto children = node->children;
+    
+    if (children.size() == 2) {
+        // declaration -> dtype declaration_tail
+        auto dtype = children[0];         // dtype (int/bool)
+        auto decl_tail = children[1];     // declaration_tail
+        
+        // Chuyển tiếp code từ declaration_tail (nếu có assignment)
+        node->setCode(decl_tail->getCode());
+    }
+}
+
+void LL1Parser::handleDeclarationTail(shared_ptr<ParseTreeNode> node) {
+    auto children = node->children;
+    
+    if (children.size() == 2) {
+        // declaration_tail -> IDENTIFIER id_tail
+        auto identifier = children[0];    // IDENTIFIER
+        auto id_tail = children[1];       // id_tail
+        
+        // Xử lý id_tail để xem có assignment không
+        handleIdTail(identifier, id_tail, node);
+    }
+}
+
+void LL1Parser::handleIdTail(shared_ptr<ParseTreeNode> identifier, 
+                             shared_ptr<ParseTreeNode> idTailNode, 
+                             shared_ptr<ParseTreeNode> resultNode) {
+    auto children = idTailNode->children;
+    
+    if (children.empty() || (children.size() == 1 && children[0]->symbol == "ε")) {
+        // id_tail -> ε (chỉ khai báo, không khởi tạo)
+        resultNode->setCode("");
+    } else if (children.size() == 2) {
+        // id_tail -> ASSIGN expression
+        auto assign = children[0];        // ASSIGN
+        auto expression = children[1];    // expression
+        
+        string varName = identifier->getLexeme().empty() ? identifier->symbol : identifier->getLexeme();
+        
+        // Sinh mã gán giá trị khởi tạo
+        codeGen.emit("=", expression->getAddr(), "", varName);
+        
+        string code = expression->getCode();
+        resultNode->setCode(code);
+    }
+}
+
+void LL1Parser::handleStatement(shared_ptr<ParseTreeNode> node) {
+    // stmt có thể chứa các loại statement khác nhau
+    // Chuyển tiếp code từ statement con
+    string code = "";
+    for (auto child : node->children) {
+        code += child->getCode();
+    }
+    node->setCode(code);
+}
+
+void LL1Parser::handleStatements(shared_ptr<ParseTreeNode> node) {
+    // stmts -> stmt stmts_tail hoặc epsilon
+    string code = "";
+    for (auto child : node->children) {
+        code += child->getCode();
+    }
+    node->setCode(code);
+}
+
+void LL1Parser::handlePrintStatement(shared_ptr<ParseTreeNode> node) {
+    auto children = node->children;
+    
+    // print_stmt -> PRINT LEFT_PAREN expression RIGHT_PAREN
+    if (children.size() == 4) {
+        auto expr = children[2]; // expression
+        
+        codeGen.emit("param", expr->getAddr());
+        codeGen.emit("call", "print", "1");
+        
+        node->setCode(expr->getCode());
+    }
+}
+
+void LL1Parser::handleDoWhile(shared_ptr<ParseTreeNode> node) {
+    auto children = node->children;
+    
+    // do_while_stmt -> DO stmt WHILE LEFT_PAREN expression RIGHT_PAREN
+    if (children.size() >= 6) {
+        auto doKeyword = children[0];    // DO
+        auto stmt = children[1];         // stmt (body của loop)
+        auto whileKeyword = children[2]; // WHILE
+        auto leftParen = children[3];    // LEFT_PAREN
+        auto condition = children[4];    // expression (điều kiện)
+        auto rightParen = children[5];   // RIGHT_PAREN
+        
+        string startLabel = codeGen.newLabel();
+        
+        // 1. Đặt nhãn bắt đầu loop
+        codeGen.emit("label", "", "", "", startLabel);
+        
+        // 2. Traverse và sinh mã cho body trước
+        traverseAndGenerate(stmt);
+        
+        // 3. Traverse và sinh mã cho condition
+        traverseAndGenerate(condition);
+        
+        // 4. Kiểm tra condition có addr không
+        if (condition->getAddr().empty()) {
+            cout << "ERROR: Do-while condition không có addr!" << endl;
+            return;
+        }
+        
+        // 5. Sinh mã jump về đầu loop nếu condition = true
+        codeGen.emit("if", condition->getAddr(), "", "", startLabel);
+        node->setCode("");
+    } else {
+        cout << "ERROR: do-while structure không đúng, có " << children.size() << " children" << endl;
+    }
+}
+
+void LL1Parser::handleForLoop(shared_ptr<ParseTreeNode> node) {
+    auto children = node->children;
+    
+    // for_stmt -> FOR LEFT_PAREN for_init SEMICOLON for_condition SEMICOLON for_update RIGHT_PAREN stmt
+    if (children.size() >= 9) {
+        auto forKeyword = children[0];    // FOR
+        auto leftParen = children[1];     // LEFT_PAREN
+        auto forInit = children[2];       // for_init
+        auto semicolon1 = children[3];    // SEMICOLON
+        auto forCondition = children[4];  // for_condition
+        auto semicolon2 = children[5];    // SEMICOLON
+        auto forUpdate = children[6];     // for_update
+        auto rightParen = children[7];    // RIGHT_PAREN
+        auto stmt = children[8];          // stmt (body của loop)
+        
+        // Tạo labels
+        string conditionLabel = codeGen.newLabel();  // Nhãn kiểm tra điều kiện
+        string endLabel = codeGen.newLabel();        // Nhãn kết thúc loop
+        
+        // 1. Sinh mã cho initialization
+        if (hasForInit(forInit)) {
+            traverseAndGenerate(forInit);
+        }
+        
+        // 2. Nhãn kiểm tra điều kiện
+        codeGen.emit("label", "", "", "", conditionLabel);
+
+        // 3. Sinh mã cho condition và jump
+        if (hasForCondition(forCondition)) {
+            traverseAndGenerate(forCondition);
+
+            // Lấy addr của condition từ expression bên trong for_condition
+            auto conditionExpr = findChild(forCondition, "expression");
+            if (conditionExpr && !conditionExpr->getAddr().empty()) {
+                codeGen.emit("ifFalse", conditionExpr->getAddr(), "", "", endLabel);
+            }
+        }
+        
+        // 4. Sinh mã cho body
+        traverseAndGenerate(stmt);
+        
+        // 5. Sinh mã update
+        if (hasForUpdate(forUpdate)) {
+            traverseAndGenerate(forUpdate);
+        }
+        
+        // 6. Nhãn kết thúc (optional, có thể dùng cho break statement)
+        codeGen.emit("label", "", "", "", endLabel);
+        node->setCode("");
+    } else {
+        cout << "ERROR: for-loop structure không đúng, có " << children.size() << " children" << endl;
+    }
+}
+
+bool LL1Parser::hasForInit(shared_ptr<ParseTreeNode> forInitNode) {
+    if (!forInitNode || forInitNode->children.empty()) {
+        return false;
+    }
+    
+    // for_init -> declaration | assignment | ε
+    return forInitNode->children.size() > 0 && 
+           forInitNode->children[0]->symbol != "ε";
+}
+
+bool LL1Parser::hasForCondition(shared_ptr<ParseTreeNode> forConditionNode) {
+    if (!forConditionNode || forConditionNode->children.empty()) {
+        return false;
+    }
+    
+    // for_condition -> expression | ε
+    return forConditionNode->children.size() > 0 && 
+           forConditionNode->children[0]->symbol != "ε";
+}
+
+bool LL1Parser::hasForUpdate(shared_ptr<ParseTreeNode> forUpdateNode) {
+    if (!forUpdateNode || forUpdateNode->children.empty()) {
+        return false;
+    }
+    
+    // for_update -> assignment | ε
+    return forUpdateNode->children.size() > 0 && 
+           forUpdateNode->children[0]->symbol != "ε";
+}
+
+void LL1Parser::handleIfStatement(shared_ptr<ParseTreeNode> node) {
+    auto children = node->children;
+    
+    // if_stmt -> IF LEFT_PAREN expression RIGHT_PAREN THEN LEFT_BRACE stmts RIGHT_BRACE else_part
+    if (children.size() >= 8) {
+        auto condition = children[2];    // expression
+        auto thenStmts = children[6];    // stmts trong then block
+        
+        traverseAndGenerate(condition);
+
+        // Tìm else_part - có thể ở vị trí 8 hoặc cuối
+        shared_ptr<ParseTreeNode> elsePart = nullptr;
+        for (size_t i = 8; i < children.size(); i++) {
+            if (children[i]->symbol == "else_part") {
+                elsePart = children[i];
+                break;
+            }
+        }
+        
+        string elseLabel = codeGen.newLabel();
+        string endLabel = codeGen.newLabel();
+        
+        if (condition->getAddr().empty()) {
+            cout << "ERROR: Condition không có addr!" << endl;
+            return;
+        }
+        
+        // 2. Kiểm tra có else không
+        if (elsePart && hasElseBlock(elsePart)) {
+            // if-then-else
+            codeGen.emit("ifFalse", condition->getAddr(), "", "", elseLabel);
+            
+            // 3. Sinh mã cho then block
+            traverseAndGenerateStatements(thenStmts);
+            codeGen.emit("goto", "", "", "", endLabel);
+            
+            // 4. Sinh mã cho else block
+            codeGen.emit("label", "", "", "", elseLabel);
+            generateElseCode(elsePart);
+            codeGen.emit("label", "", "", "", endLabel);
+            
+        } else {
+            // if-then only
+            codeGen.emit("ifFalse", condition->getAddr(), "", "", endLabel);
+            
+            // 3. Sinh mã cho then block
+            traverseAndGenerateStatements(thenStmts);
+            codeGen.emit("label", "", "", "", endLabel);
+        }
+        
+        node->setCode("");
+    }
+}
+
+// Helper methods
+bool LL1Parser::hasElseBlock(shared_ptr<ParseTreeNode> elsePart) {
+    if (!elsePart || elsePart->children.empty()) {
+        return false;
+    }
+    
+    // else_part -> ELSE LEFT_BRACE stmts RIGHT_BRACE | ε
+    return elsePart->children.size() >= 4;
+}
+
+void LL1Parser::generateElseCode(shared_ptr<ParseTreeNode> elsePart) {
+    if (!elsePart || elsePart->children.size() < 4) return;
+    
+    // else_part -> ELSE LEFT_BRACE stmts RIGHT_BRACE
+    auto elseStmts = elsePart->children[2]; // stmts
+    traverseAndGenerateStatements(elseStmts);
+}
+
+void LL1Parser::traverseAndGenerateStatements(shared_ptr<ParseTreeNode> stmtsNode) {
+    if (!stmtsNode) return;
+    
+    // stmts -> stmt stmts_tail | ε
+    auto children = stmtsNode->children;
+    
+    for (auto child : children) {
+        if (child->symbol == "stmt") {
+            traverseAndGenerate(child);
+        } else if (child->symbol == "stmts_tail") {
+            traverseAndGenerateStatements(child);
+        }
+    }
+}
+
+shared_ptr<ParseTreeNode> LL1Parser::findChild(shared_ptr<ParseTreeNode> parent, const string& symbol) {
+    if (!parent) return nullptr;
+    
+    for (auto child : parent->children) {
+        if (child->symbol == symbol) {
+            return child;
+        }
+    }
+    return nullptr;
+}
+
+vector<shared_ptr<ParseTreeNode>> LL1Parser::findChildren(shared_ptr<ParseTreeNode> parent, const string& symbol) {
+    vector<shared_ptr<ParseTreeNode>> result;
+    if (!parent) return result;
+    
+    for (auto child : parent->children) {
+        if (child->symbol == symbol) {
+            result.push_back(child);
+        }
+    }
+    return result;
+}
+
+bool LL1Parser::isTerminal(const string& symbol) {
+    // Kiểm tra xem symbol có phải terminal không
+    return symbol.find("TOKEN") != string::npos || 
+           symbol == "IDENTIFIER" || symbol == "NUMBER" ||
+           symbol == "TRUE" || symbol == "FALSE" ||
+           symbol == "PLUS" || symbol == "MULTIPLY" ||
+           symbol == "ASSIGN" || symbol == "SEMICOLON";
 }
 //=========================================== LL1Parser ===========================================

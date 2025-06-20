@@ -20,6 +20,7 @@ void printUsage(const char* programName) {
     std::cout << "  --table               Print the LL(1) parsing table" << std::endl;
     std::cout << "  --terminals           Print the list of terminals" << std::endl;
     std::cout << "  --non-terminals       Print the list of non-terminals" << std::endl;
+    std::cout << "  --intermediate-code   Generate and print three-address code" << std::endl;
     std::cout << "  --help                Display this help message" << std::endl;
 }
 
@@ -36,6 +37,7 @@ int main(int argc, char* argv[]) {
     bool printTable = false;
     bool printTerminals = false;
     bool printNonTerminals = false;
+    bool printIntermediateCode = false;
     
     // Parse command line arguments
     std::unordered_map<std::string, std::string*> optionMap = {
@@ -65,6 +67,8 @@ int main(int argc, char* argv[]) {
             printTerminals = true;
         } else if (arg == "--non-terminals") {
             printNonTerminals = true;
+        } else if (arg == "--intermediate-code") {
+            printIntermediateCode = true;
         } else if (optionMap.find(arg) != optionMap.end()) {
             // This is an option that requires a value
             if (i + 1 < argc) {
@@ -186,6 +190,11 @@ int main(int argc, char* argv[]) {
             } else if (verbose) {
                 // In verbose mode, print basic parse tree if no specific format requested
                 parser.printParseTree();
+            }
+
+            if (printIntermediateCode) {
+                parser.generateIntermediateCode();
+                parser.printIntermediateCode();
             }
         } else {
             std::cout << "Parsing failed!" << std::endl;

@@ -1,6 +1,7 @@
 #include <bits/stdc++.h>
 #include "lexer.hpp"
 #include "error_reporter.hpp"
+#include "code_generator.hpp"
 
 using namespace std;
 
@@ -28,8 +29,11 @@ struct ParseTreeNode {
     vector<string> production;  // Quy tắc sản xuất được áp dụng (nếu là non-terminal)
     string lexeme;  // Giá trị thực tế của token (nếu là terminal)
     vector<shared_ptr<ParseTreeNode>> children;
+
+    string addr;           // Địa chỉ kết quả (cho expression)
+    string code;           // Mã đã sinh (cho statement)
     
-    ParseTreeNode(const string& symbol) : symbol(symbol) {}
+    ParseTreeNode(const string& symbol) : symbol(symbol), addr(""), code(""), lexeme("") {}
     
     void addChild(shared_ptr<ParseTreeNode> child) {
         children.push_back(child);
@@ -48,6 +52,14 @@ struct ParseTreeNode {
             child->printTree(depth + 1);
         }
     }
+
+    void setAddr(const string& address) { addr = address; }
+    void setCode(const string& codeStr) { code = codeStr; }
+    void setLexeme(const string& lex) { lexeme = lex; }
+    
+    string getAddr() const { return addr; }
+    string getCode() const { return code; }
+    string getLexeme() const { return lexeme; }
 
     void printTreeEnhanced(int depth = 0, bool isLast = true) const;
     void exportToDot(ostream& os, int& nodeCounter, int parentId = -1) const;
@@ -135,7 +147,7 @@ private:
 };
 
 class LL1Parser {
-private:
+protected:
     set<TokenType> synchronizationTokens = {
         L_TOKEN_SEMICOLON,     // Kết thúc phát biểu (;)
         L_TOKEN_BEGIN,         // Bắt đầu chương trình
@@ -156,6 +168,8 @@ private:
 
     GrammarAnalyzer grammarAnalyzer;
     ErrorReporter errorReporter = ErrorReporter();
+    CodeGenerator codeGen;
+    map<string, string> symbolTable;
     Lexer lexer;
     Token currentToken;
 
@@ -234,4 +248,43 @@ public:
             cout << nonTerminal << endl;
         }
     }
+
+    void generateIntermediateCode();
+    void printIntermediateCode();
+    
+private:
+    // Semantic actions
+    void traverseAndGenerate(shared_ptr<ParseTreeNode> node);
+    void traverseAndGenerateStatements(shared_ptr<ParseTreeNode> node);
+    void traverseAndGenerateStatement(shared_ptr<ParseTreeNode> stmtNode);
+    void handleExpression(shared_ptr<ParseTreeNode> node);
+    void handleExpressionTail(shared_ptr<ParseTreeNode> currentResult, shared_ptr<ParseTreeNode> tailNode);
+    void handleAddition(shared_ptr<ParseTreeNode> node);
+    void handleAdditionTail(shared_ptr<ParseTreeNode> currentResult, shared_ptr<ParseTreeNode> tailNode);
+    void handleMultiplication(shared_ptr<ParseTreeNode> node);
+    void handleMultiplicationTail(shared_ptr<ParseTreeNode> currentResult, shared_ptr<ParseTreeNode> tailNode);
+    void handleFactor(shared_ptr<ParseTreeNode> node);
+    void handleAssignment(shared_ptr<ParseTreeNode> node);
+    void handleDeclaration(shared_ptr<ParseTreeNode> node);
+    void handleDeclarationTail(shared_ptr<ParseTreeNode> node);
+    void handleIdTail(shared_ptr<ParseTreeNode> identifier, 
+                      shared_ptr<ParseTreeNode> idTailNode, 
+                      shared_ptr<ParseTreeNode> resultNode);
+    void handleIfStatement(shared_ptr<ParseTreeNode> node);
+    void handleDoWhile(shared_ptr<ParseTreeNode> node);
+    void handleForLoop(shared_ptr<ParseTreeNode> node);
+    void handlePrintStatement(shared_ptr<ParseTreeNode> node);
+    void handleStatement(shared_ptr<ParseTreeNode> node);
+    void handleStatements(shared_ptr<ParseTreeNode> node);
+    
+    // Helper methods
+    bool hasElseBlock(shared_ptr<ParseTreeNode> elsePart);
+    bool hasForInit(shared_ptr<ParseTreeNode> forInit);
+    bool hasForCondition(shared_ptr<ParseTreeNode> forCondition);
+    bool hasForUpdate(shared_ptr<ParseTreeNode> forUpdate);
+    void generateElseCode(shared_ptr<ParseTreeNode> elsePart);
+    shared_ptr<ParseTreeNode> findChild(shared_ptr<ParseTreeNode> parent, const string& symbol);
+    vector<shared_ptr<ParseTreeNode>> findChildren(shared_ptr<ParseTreeNode> parent, const string& symbol);
+    string getRelopOperator(shared_ptr<ParseTreeNode> relopNode);
+    bool isTerminal(const string& symbol);
 };
